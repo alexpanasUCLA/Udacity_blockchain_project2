@@ -36,6 +36,7 @@ class Blockchain {
     //     newBlock.hash = SHA256(JSON.stringify(newBlock)).toString();  
         console.log(minedBlock);
         this.chain.put(minedBlock.height,JSON.stringify(minedBlock))
+        return minedBlock;
     }
 
     // Mine new block 

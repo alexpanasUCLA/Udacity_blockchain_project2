@@ -28,7 +28,11 @@ app.get('/block/:id',(req,res)=>{
 app.post('/block',(req,res)=>{
     bc.mineBlock(new Block(req.body.body))
         .then((blc)=>{
-            res.json(blc)
+            bc.addBlock(blc)
+            return blc; 
+        })
+        .then((bl)=>{
+            res.json(bl)
         })
 
 })
