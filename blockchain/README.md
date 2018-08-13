@@ -60,10 +60,7 @@ localhost:8000/block
 
 ```
 
-POST endpoint uses parsed data to generate a block using mineBlock() method of Blockchain class and sends back response which contains JSON encoding of the block to be inserted to the blockchain. The new block is generated but NOT inserted into the blockchain (NOT stored in blockchaindata file that stores blockchain). 
-
-
-
+POST endpoint uses parsed data to generate a block using mineBlock() method of Blockchain class and sends back response which contains JSON encoding of the block to be inserted to the blockchain. The new block is generated and inserted into the blockchain (stored in blockchaindata file that stores blockchain). 
 
 
 
