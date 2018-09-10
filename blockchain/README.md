@@ -8,7 +8,8 @@ nvm use 9
 
 ```
 
-The project is located in the folder blockchain within PROJECT_2 directory.
+The project is located in the folder blockchain within PROJECT_2 directory. Please, 
+cd to blockchain directory. 
 
  - Use npm install command to intall project dependencies. The folder node_modules should be generated. 
   ```
@@ -19,48 +20,160 @@ The project is located in the folder blockchain within PROJECT_2 directory.
 ``` node app.js
 ```
 
-# API endpoints 
+# API ENDPOINTS 
 
-Express.js based API exposes 2 endpoints: GET: '/block/:id', and POST: '/block'.
+The user submits its public key (Blockchain ID) to request Validation, and in response
+in JSON receives message to sign with private key. The messages needs to be signed no later
+than 300ms (5min) after request is received. 
 
-- GET endpoints:
+The user signes the message with its private key and sumbits to validation. The result of 
+validation is provided in JSON response with messageSigniture set to true or false. 
 
-API return JSON formated block specified by a number if reached by GET endpoint. 
-The syntax is `localhost:8000/block/number`, where number is a height of the block in blockchain. 
+Provided that messageSigniture is validate, the encoded information on the star is 
+stored in the block on the blockchain. 
 
-Example:
 
-GET request using the syntax below return block with height 0 - which is Genesis Block. 
+
+POST ENDPOINTS
+
+Request Validation. 
 
 ```
-localhost:8000/block/0
-
+localhost:8000//requestValidation
 ```
-Error handling:
-
-If no block exist with provided height, GET request returns with STATUS 404, NOT FOUND. 
-
-- POST endpoints 
-
-API accepts data send in JSON format. Use the follwing syntax to reach POST endpoint of API:
+Parameters: 
 
 ```
 {
-  "body": "Insert your data here"
+  "address": <public key>
+}
+```
+Response: 
+
+```
+{
+  "address": <public key>,
+  "requestTimeStamp": <new Date()>,
+  "message": "<public key>:<requestedTimeStamp>:starRegistry",
+  "validationWindow": 300
 }
 
 ```
-The POST request is parsed by body-parser middleware third-party package. Use "body" field to 
-send data to POST endpoint.
 
-Example: 
+Validate message with private key. 
+
+```
+localhost:8000//message-signature/validate
+```
+
+Parameters: 
+
+```
+{
+	"address":<public address>,
+	"signature":<signiture of message with private key>,
+	"message":<message sent after request for validation>
+}
+
+
+```
+
+Response: 
+
+```
+{
+    "messageSigniture": true or false,
+    "address": <publickey>,
+    "signature": <signiture of message with private key>,
+    "message": <message sent after request for validation>,
+    "validationWindow": <time difference request and submit of data>,
+    "requestTimeStamp": <time of request>
+}
+```
+Add encodes data on star to blockchain. 
 
 ```
 localhost:8000/block
+```
+
+Parameters:
+
+```
+{
+  "address": <public key>,
+  "star": {
+    "dec": <data>,
+    "ra": <data>,
+    "story": <message in ASCII>"
+  }
+}
+
+```
+Response:
+
+```
+{
+    "hash": <block hash>,
+    "height": <block height>,
+    "body": {
+        "address": <public key>,
+        "star": {
+            "dec": <data>,
+            "ra": "<data>,
+            "story": <hex encoded story>
+        }
+    },
+    "time": <time of block creation>,
+    "previousBlockHash": <hash of previous block>
+}
 
 ```
 
-POST endpoint uses parsed data to generate a block using mineBlock() method of Blockchain class and sends back response which contains JSON encoding of the block to be inserted to the blockchain. The new block is generated and inserted into the blockchain (stored in blockchaindata file that stores blockchain). 
+GET ENDPOINTS.
+
+GET block with given height. 
+
+```
+localhost:8000/block/<block height>
+```
+
+Response: 
+```
+{
+    "hash": <block hash>,
+    "height": <block height>,
+    "body": {
+        "address": <public key>,
+        "star": {
+            "dec": <data>,
+            "ra": "<data>,
+            "story": <hex encoded story>,
+            "decodedStory":<decoded story>
+        }
+    },
+    "time": <time of block creation>,
+    "previousBlockHash": <hash of previous block>
+}
+
+```
+
+GET block with given block hash.
+
+```
+localhost:8000/stars/hash:<block hash>
+``` 
+Response is the same as in GET block with given height. 
+
+GET block with given Blockchain ID (address).
+
+```
+localhost:8000/stars/address:<address>
+```
+
+Response:
+
+Array of blocks containing provided Blockchain ID (address). 
+
 
 
 
