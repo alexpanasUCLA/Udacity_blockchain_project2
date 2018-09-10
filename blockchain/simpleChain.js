@@ -34,7 +34,7 @@ class Blockchain {
     //     newBlock.time = new Date().getTime().toString().slice(0,-3);
     //     newBlock.previousBlockHash = prev.hash; 
     //     newBlock.hash = SHA256(JSON.stringify(newBlock)).toString();  
-        console.log(minedBlock);
+        // console.log(minedBlock);
         this.chain.put(minedBlock.height,JSON.stringify(minedBlock))
         return minedBlock;
     }
