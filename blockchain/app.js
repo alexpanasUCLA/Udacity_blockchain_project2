@@ -23,7 +23,7 @@ app.use(bodyParser.json())
 app.get('/block/:id',async (req,res)=>{
  
         const blockRes = await bc.getBlock(req.params.id);
-        if(blockRes) {
+        if(blockRes && blockRes.body.star) {
             blockRes.body.star.decodedStory = Buffer.from(blockRes.body.star.story,'hex').toString();
             res.json(blockRes)
         } else {
@@ -73,8 +73,12 @@ app.get('/stars/address:address',async (req,res)=>{
 // POST provided data on star with given Blockchain ID into the blockchain 
 app.post('/block',async (req,res)=>{
     const {address,star} = req.body; 
-    // TODO: Check if there is memPool entry with address, and it is validated
+    // Check if there is memPool entry with address, and it is validated
+    if(!memPool[address] || !memPool[address].messageSigniture) {
+        res.json(`Your address is not validated`); 
+    }
     star.story = Buffer.from(star.story, 'ascii').toString('hex');
+
     // Use Buffer.byteLength() to check size and truncate if >500 bytes
     if(Buffer.byteLength(star.story)>=500) {
         return res.json(`Story max size is 500 bytes. 
@@ -104,6 +108,10 @@ app.post('/requestValidation',(req,res)=>{
 // POST request with address, signature, and message to verify identity 
 app.post('/message-signature/validate',(req,res)=>{
     const{address,signature,message} = req.body; 
+    // TODO: Check if message is the same as validation message
+    if(memPool.message !== message) {
+        res.json(`Please, validate correct message.`)
+    }
     if(memPool[address]) {
         let timeNow = new Date().getTime().toString().slice(0,-3);
         let timeWindow = timeNow-memPool[address].requestTimeStamp-300;
@@ -119,6 +127,7 @@ app.post('/message-signature/validate',(req,res)=>{
                 validationWindow:-timeWindow,
                 requestTimeStamp:memPool[address].requestTimeStamp                   
             };
+            memPool[address].messageSigniture = verificationResponse.messageSigniture;
             res.json(verificationResponse);
         }
     }
