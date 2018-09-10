@@ -18,6 +18,7 @@ let memPool = {};
 
 app.use(bodyParser.json())
 
+// GET request for a specific block with provided ID
 app.get('/block/:id',async (req,res)=>{
  
         const blockRes = await bc.getBlock(req.params.id);
@@ -27,19 +28,28 @@ app.get('/block/:id',async (req,res)=>{
         } else {
             res.status(404).send()
         }
-    
-    // bc.getBlock(blockID)
-    //     .then((block)=>{
-    //         if(block){res.json(block)}
-    //         else {res.status(404).send()}
-    //     })
-    //     .catch(((error)=>{
-    //         res.status(404).send()
-
-    //     }))
    
 });
 
+// GET request for a specific block with provided block hash
+app.get('/stars/hash:hash',async (req,res)=>{
+    const lengthOfChain = await bc.getBlockHeight(); 
+    const starHash = req.params.hash.slice(1);
+    for (let index = 1; index < lengthOfChain; index++) {
+        const element = await bc.getBlock(index);
+        if(element.hash === starHash) {
+            element.body.star.decodedStory = Buffer.from(element.body.star.story,'hex').toString();
+            res.json(element);
+            return;
+        }       
+    }
+    res.json(`No block with hash ${starHash} in the chain`);
+
+});
+
+
+
+// POST provided data on star with given Blockchain ID into the blockchain 
 app.post('/block',async (req,res)=>{
     const {address,star} = req.body; 
     // TODO: Check if there is memPool entry with address, and it is validated
@@ -59,16 +69,6 @@ app.post('/block',async (req,res)=>{
     memPool[address].block = minedBlock; 
     console.log(memPool);
     res.json(minedBlock)
-
-
-    // bc.mineBlock(new Block(req.body.body))
-    //     .then((blc)=>{
-    //         bc.addBlock(blc)
-    //         return blc; 
-    //     })
-    //     .then((bl)=>{
-    //         res.json(bl)
-    //     })
 
 });
 
@@ -104,7 +104,7 @@ app.post('/message-signature/validate',(req,res)=>{
             res.json(verificationResponse);
         }
     }
-    res.json('There is no such address.');
+    res.json(`There is no such approved address as ${address}.`);
 
 })
 
