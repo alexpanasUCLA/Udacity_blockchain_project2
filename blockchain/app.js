@@ -16,9 +16,10 @@ const bc = new Blockchain();
 // Declare memPool to store data corresponding to a Blockchain ID
 let memPool = {};
 
+
 app.use(bodyParser.json())
 
-// GET request for a specific block with provided ID
+// GET request for a specific block with provided block ID
 app.get('/block/:id',async (req,res)=>{
  
         const blockRes = await bc.getBlock(req.params.id);
@@ -48,6 +49,26 @@ app.get('/stars/hash:hash',async (req,res)=>{
 });
 
 
+// GET blocks containing data on registered stars 
+app.get('/stars/address:address',async (req,res)=>{
+    const lengthOfChain = await bc.getBlockHeight(); 
+    const blockchainID = req.params.address.slice(1);
+    let starredBlocks =[];
+
+    for (let index = 1; index < lengthOfChain; index++) {
+        const element = await bc.getBlock(index);
+        if(element.body.address === blockchainID) {
+            element.body.star.decodedStory = Buffer.from(element.body.star.story,'hex').toString();
+            starredBlocks.push(element)
+        }       
+    }
+
+    res.json(starredBlocks);
+
+});
+
+
+
 
 // POST provided data on star with given Blockchain ID into the blockchain 
 app.post('/block',async (req,res)=>{
@@ -65,9 +86,6 @@ app.post('/block',async (req,res)=>{
     }
 
     const minedBlock = await bc.addBlock(new Block(notaryData));
-
-    memPool[address].block = minedBlock; 
-    console.log(memPool);
     res.json(minedBlock)
 
 });
