@@ -68,14 +68,18 @@ app.get('/stars/address:address',async (req,res)=>{
 });
 
 
-
-
 // POST provided data on star with given Blockchain ID into the blockchain 
 app.post('/block',async (req,res)=>{
     const {address,star} = req.body; 
+
+    // Check if there are enough data
+    if(!(star && star.dec && star.ra)) {
+        return res.json('Not enough data provides');
+    }
+
     // Check if there is memPool entry with address, and it is validated
     if(!memPool[address] || !memPool[address].messageSigniture) {
-        res.json(`Your address is not validated`); 
+        return res.json(`Your address is not validated`); 
     }
     star.story = Buffer.from(star.story, 'ascii').toString('hex');
 
