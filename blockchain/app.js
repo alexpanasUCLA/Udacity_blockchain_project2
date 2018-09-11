@@ -94,6 +94,9 @@ app.post('/block',async (req,res)=>{
     }
 
     const minedBlock = await bc.addBlock(new Block(notaryData));
+
+    // Delete entry with validated address to avoid ability to send different req
+    delete memPool[address];
     res.json(minedBlock)
 
 });
@@ -103,6 +106,10 @@ app.post('/block',async (req,res)=>{
 app.post('/requestValidation',(req,res)=>{
 
     let address = req.body.address;
+    if(!address.trim()){
+        res.json('Please,provide valid address')
+    }
+
     if(!memPool[address]){     
         let requestTimeStamp = new Date().getTime().toString().slice(0,-3);
         let message = `${address}:${requestTimeStamp}:starRegistry`;
@@ -127,7 +134,10 @@ app.post('/requestValidation',(req,res)=>{
 // POST request with address, signature, and message to verify identity 
 app.post('/message-signature/validate',(req,res)=>{
     const{address,signature} = req.body; 
-    console.log(memPool[address]);
+
+    if(!address.trim() || !signature.trim()) {
+        res.json('Please,provide address and/or signiture')
+    }
 
     if(memPool[address]) {
         let timeNow = new Date().getTime().toString().slice(0,-3);
