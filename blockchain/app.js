@@ -101,19 +101,23 @@ app.post('/block',async (req,res)=>{
 // user provides public address in POST request, and receives message to sign 
 
 app.post('/requestValidation',(req,res)=>{
+
     let address = req.body.address;
-    if(!memPool[address]){
+    if(!memPool[address]){     
+        let requestTimeStamp = new Date().getTime().toString().slice(0,-3);
+        let message = `${address}:${requestTimeStamp}:starRegistry`;
+        
         memPool[address] = {
             address,
-            requestTimeStamp:new Date().getTime().toString().slice(0,-3),
-            message:`${address}:${this.requestTimeStamp}:starRegistry`,
-            validationRequest:300,
+            requestTimeStamp,
+            message,
+            validationWindow:300,
         };   
     } else {
         // adjust validationRequest
         let timeNow = new Date().getTime().toString().slice(0,-3);
         let timeWindow = timeNow-memPool[address].requestTimeStamp-300;
-        timeWindow <0?memPool[address].validationRequest = - timeWindow: delete memPool[address];
+        timeWindow <0?memPool[address].validationWindow = - timeWindow: delete memPool[address];
     }
     
     memPool[address]?res.json(memPool[address]):res.json('Repeat validation request');
@@ -123,19 +127,21 @@ app.post('/requestValidation',(req,res)=>{
 // POST request with address, signature, and message to verify identity 
 app.post('/message-signature/validate',(req,res)=>{
     const{address,signature} = req.body; 
+    console.log(memPool[address]);
 
     if(memPool[address]) {
         let timeNow = new Date().getTime().toString().slice(0,-3);
         let timeWindow = timeNow-memPool[address].requestTimeStamp-300;
+        console.log(timeWindow);
         if(timeWindow > 0){
             delete memPool[address];
             res.json('Waiting time exceeded 5 minutes; try again, please!')
         } else {
             const verificationResponse ={
-                messageSigniture: bitcoinMessage.verify(memPool.message, address, signature),
+                messageSigniture: bitcoinMessage.verify(memPool[address].message, address, signature),
                 address,
                 signature,
-                message,
+                message:memPool.message,
                 validationWindow:-timeWindow,
                 requestTimeStamp:memPool[address].requestTimeStamp                   
             };
