@@ -71,8 +71,7 @@ Parameters:
 ```
 {
 	"address":<public address>,
-	"signature":<signiture of message with private key>,
-	"message":<message sent after request for validation>
+	"signature":<signiture of message with private key>
 }
 
 

@@ -23,7 +23,7 @@ app.use(bodyParser.json())
 app.get('/block/:id',async (req,res)=>{
  
         const blockRes = await bc.getBlock(req.params.id);
-        if(blockRes && blockRes.body.star) {
+        if(blockRes) {
             blockRes.body.star.decodedStory = Buffer.from(blockRes.body.star.story,'hex').toString();
             res.json(blockRes)
         } else {
@@ -36,7 +36,7 @@ app.get('/block/:id',async (req,res)=>{
 app.get('/stars/hash:hash',async (req,res)=>{
     const lengthOfChain = await bc.getBlockHeight(); 
     const starHash = req.params.hash.slice(1);
-    for (let index = 1; index < lengthOfChain; index++) {
+    for (let index = 0; index < lengthOfChain; index++) {
         const element = await bc.getBlock(index);
         if(element.hash === starHash) {
             element.body.star.decodedStory = Buffer.from(element.body.star.story,'hex').toString();
@@ -98,20 +98,28 @@ app.post('/block',async (req,res)=>{
 
 app.post('/requestValidation',(req,res)=>{
     let address = req.body.address;
-    let requestTimeStamp = new Date().getTime().toString().slice(0,-3);
-    let message = `${address}:${requestTimeStamp}:starRegistry`;
-    const validationRequest = {address,requestTimeStamp,message,"validationWindow":300}
-    memPool[address] = {address,requestTimeStamp,message};  
-    res.json(validationRequest)
+    if(!memPool[address]){
+        memPool[address] = {
+            address,
+            requestTimeStamp:new Date().getTime().toString().slice(0,-3),
+            message:`${address}:${this.requestTimeStamp}:starRegistry`,
+            validationRequest:300,
+        };   
+    } else {
+        // adjust validationRequest
+        let timeNow = new Date().getTime().toString().slice(0,-3);
+        let timeWindow = timeNow-memPool[address].requestTimeStamp-300;
+        timeWindow <0?memPool[address].validationRequest = - timeWindow: delete memPool[address];
+    }
+    
+    memPool[address]?res.json(memPool[address]):res.json('Repeat validation request');
+
 })
 
 // POST request with address, signature, and message to verify identity 
 app.post('/message-signature/validate',(req,res)=>{
-    const{address,signature,message} = req.body; 
-    // TODO: Check if message is the same as validation message
-    if(memPool.message !== message) {
-        res.json(`Please, validate correct message.`)
-    }
+    const{address,signature} = req.body; 
+
     if(memPool[address]) {
         let timeNow = new Date().getTime().toString().slice(0,-3);
         let timeWindow = timeNow-memPool[address].requestTimeStamp-300;
@@ -120,7 +128,7 @@ app.post('/message-signature/validate',(req,res)=>{
             res.json('Waiting time exceeded 5 minutes; try again, please!')
         } else {
             const verificationResponse ={
-                messageSigniture: bitcoinMessage.verify(message, address, signature),
+                messageSigniture: bitcoinMessage.verify(memPool.message, address, signature),
                 address,
                 signature,
                 message,
