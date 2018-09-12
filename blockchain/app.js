@@ -73,12 +73,12 @@ app.post('/block',async (req,res)=>{
     const {address,star} = req.body; 
 
     // Check if there are enough data
-    if(!(star && star.dec && star.ra)) {
-        return res.json('Not enough data provides');
+    if(!(star && star.dec && star.ra && star.story)) {
+        return res.json('Not enough data provided');
     }
 
     // Check if there is memPool entry with address, and it is validated
-    if(!memPool[address] || !memPool[address].messageSigniture) {
+    if(!memPool[address] || !memPool[address].messageSignature) {
         return res.json(`Your address is not validated`); 
     }
     star.story = Buffer.from(star.story, 'ascii').toString('hex');
@@ -107,7 +107,7 @@ app.post('/requestValidation',(req,res)=>{
 
     let address = req.body.address;
     if(!address.trim()){
-        res.json('Please,provide valid address')
+        res.json('Please,provide valid address');
     }
 
     if(!memPool[address]){     
@@ -142,20 +142,24 @@ app.post('/message-signature/validate',(req,res)=>{
     if(memPool[address]) {
         let timeNow = new Date().getTime().toString().slice(0,-3);
         let timeWindow = timeNow-memPool[address].requestTimeStamp-300;
-        console.log(timeWindow);
+     
         if(timeWindow > 0){
             delete memPool[address];
             res.json('Waiting time exceeded 5 minutes; try again, please!')
         } else {
             const verificationResponse ={
-                messageSigniture: bitcoinMessage.verify(memPool[address].message, address, signature),
-                address,
-                signature,
-                message:memPool.message,
-                validationWindow:-timeWindow,
-                requestTimeStamp:memPool[address].requestTimeStamp                   
+                registerStar: bitcoinMessage.verify(memPool[address].message, address, signature),
+                status: {
+                    messageSignature: bitcoinMessage.verify(memPool[address].message, address, signature),
+                    address,
+                    signature,
+                    message:memPool.message,
+                    validationWindow:-timeWindow,
+                    requestTimeStamp:memPool[address].requestTimeStamp 
+
+                }               
             };
-            memPool[address].messageSigniture = verificationResponse.messageSigniture;
+            memPool[address].messageSignature = verificationResponse.status.messageSignature;
             res.json(verificationResponse);
         }
     }
@@ -166,12 +170,4 @@ app.post('/message-signature/validate',(req,res)=>{
 app.listen(HTTP_PORT,()=>{
     console.log(`Listening on port ${HTTP_PORT}`);
 })
-
-
-
-
-
-
-
-
 
